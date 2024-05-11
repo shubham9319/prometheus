@@ -1,38 +1,41 @@
-Role Name
-=========
+## Project Title:
+Node Exporter Deployment Automation
 
-A brief description of the role goes here.
+## Description:
+This project automates the deployment of Node Exporter, a Prometheus exporter for system metrics, using Ansible. It sets up Node Exporter by creating a new user, downloading the release archive, extracting binaries, configuring Node Exporter, setting up systemd service, allowing firewall traffic on port 9100, and integrating with Prometheus.
 
-Requirements
-------------
+### File Tree Structure:
+    node-exporter-automation/
+    │
+    ├── README.md
+    ├── tasks
+    │ └── main.yml
+    ├── vars
+    │ └── main.yml
+    ├── handlers
+    │ └── main.yml
+    └── templates
+    ├── node_exporter_config.j2
+    └── node_exporter_service.j2
 
-Any pre-requisites that may not be covered by Ansible itself or the role should be mentioned here. For instance, if the role uses the EC2 module, it may be a good idea to mention in this section that the boto package is required.
+### Explanation:
+1. `README.md:` Provides an overview of the project, its purpose, and instructions on using it.
+2. `tasks/main.yml:` Contains Ansible tasks for deploying Node Exporter, including user creation, downloading and extracting binaries, configuring Node Exporter, managing systemd services, allowing firewall traffic, and integrating with Prometheus.
+3. `vars/main.yml:` Defines variables used in the deployment process, such as Node Exporter version and user.
+4. `handlers/main.yml:` Contains handlers for managing systemd services, specifically to reload systemd after service configuration changes.
+5. `templates/node_exporter_config.j2:` Jinja2 template file for generating the Node Exporter configuration file based on provided variables.
+6. `templates/node_exporter_service.j2:` Jinja2 template file for generating the systemd service unit file for Node Exporter based on provided variables.
 
-Role Variables
---------------
+## Usage
 
-A description of the settable variables for this role should go here, including any variables that are in defaults/main.yml, vars/main.yml, and any variables that can/should be set via parameters to the role. Any variables that are read from other roles and/or the global scope (ie. hostvars, group vars, etc.) should be mentioned here as well.
+1. **Clone Repository**: Clone this repository to your local machine.
 
-Dependencies
-------------
+2. **Update Variables**: Navigate to `/node-exporter-automation/vars/main.yml` and update the variables as per your requirements.
 
-A list of other roles hosted on Galaxy should go here, plus any details in regards to parameters that may need to be set for other roles, or variables that are used from other roles.
+3. **Execute Playbook**: Run the following command to execute the playbook:
+    ```
+    ansible-playbook -i inventory-file node_exporter.yml
+    ```
 
-Example Playbook
-----------------
-
-Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
-
-    - hosts: servers
-      roles:
-         - { role: username.rolename, x: 42 }
-
-License
--------
-
-BSD
-
-Author Information
-------------------
-
-An optional section for the role authors to include contact information, or a website (HTML is not allowed).
+## Note:
+After cloning this repository, change variables in the `vars/main.yml` file according to your requirements. Then execute the playbook using the `ansible-playbook` command as shown above.
