@@ -1,0 +1,12 @@
+---
+- name: Install and configure Prometheus
+  hosts: master
+  become: true
+  roles:
+  - prometheus
+
+- name: Install and configure node-exporter
+  hosts: worker
+  become: true
+  roles:
+  - node-exporter

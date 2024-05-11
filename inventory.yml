@@ -1,0 +1,6 @@
+[master]
+master ansible_ssh_user=first_master_username ansible_host=master_ip ansible_sudo_pass="master_password"
+
+[worker]
+worker1 ansible_ssh_user=worker1_username ansible_host=worker1_ip ansible_sudo_pass="worker1_password"
+worker2 ansible_ssh_user=worker2_username ansible_host=worker2_ip ansible_sudo_pass="worker2_password"

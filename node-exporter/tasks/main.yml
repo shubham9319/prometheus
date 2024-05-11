@@ -1,0 +1,91 @@
+- name: Create a new user without a home directory
+  user:
+    name: "{{ node_exp_user }}"
+    create_home: false
+    shell: /bin/false
+    state: present
+
+- name: Download "node_exporter" release archive to /tmp
+  get_url:
+    url: "https://github.com/prometheus/node_exporter/releases/download/v{{ node_exporter_version }}/node_exporter-{{ node_exporter_version }}.linux-amd64.tar.gz"
+    dest: "/tmp/node_exporter-{{ node_exporter_version }}.linux-amd64.tar.gz"
+    mode: '0644'
+
+- name: Extract "node_exporter" release archive
+  ansible.builtin.unarchive:
+    src: "/tmp/node_exporter-{{ node_exporter_version }}.linux-amd64.tar.gz"
+    dest: "/tmp"
+    remote_src: yes
+
+- name: Clean up the archive
+  file:
+    path: "/tmp/node_exporter-{{ node_exporter_version }}.linux-amd64.tar.gz"
+    state: absent
+
+- name: Copy "node_exporter" binary to /usr/local/bin
+  copy:
+    src: /tmp/node_exporter-{{ node_exporter_version }}.linux-amd64/node_exporter
+    dest: /usr/local/bin/node_exporter
+    owner: "{{ node_exp_user }}"
+    group: "{{ node_exp_user }}"
+    mode: 0755
+    remote_src: true
+
+- name: Delete /tmp/node_exporter-{{ node_exporter_version }}.linux-amd64 directory
+  file:
+    path: /tmp/node_exporter-{{ node_exporter_version }}.linux-amd64
+    state: absent
+
+- name: Render Node Exporter Configuration from Jinja2 Template
+  template:
+    src: node_exporter_config.j2 # Provide the path to your Jinja2 template
+    dest: /tmp/node_exporter_config.yml # Temporary file to store the rendered configuration
+  delegate_to: master
+
+- name: Read Rendered Configuration File Content
+  command: cat /tmp/node_exporter_config.yml
+  register: rendered_config
+  delegate_to: master
+
+- name: Append Rendered Configuration to Prometheus Configuration
+  blockinfile:
+    path: /etc/prometheus/prometheus.yml
+    insertafter: EOF
+    content: "{{ rendered_config.stdout }}"
+  delegate_to: master
+
+- name: Replace the content of /etc/systemd/system/node_exporter.service
+  template:
+    src: node_exporter_service.j2
+    dest: /etc/systemd/system/node_exporter.service
+    owner: root
+    group: root
+    mode: 0644
+  notify: Reload node systemd
+
+- name: Restart node_exporter
+  systemd:
+    name: "{{ node_exp_user }}"
+    state: restarted
+
+- name: Enable the node_exporter service
+  systemd:
+    name: "{{ node_exp_user }}"
+    enabled: yes
+
+- name: "UFW - Allow 9100 port"
+  ufw:
+    rule: allow
+    port: 9100
+    proto: tcp
+
+- name: Restart node_exporter
+  systemd:
+    name: prometheus
+    state: restarted
+  delegate_to: master
+
+- name: Reload systemd daemon
+  systemd:
+    daemon_reload: yes
+  delegate_to: master

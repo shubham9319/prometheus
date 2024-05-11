@@ -1,0 +1,7 @@
+- name: Fetch /tmp/abc.txt file content using vars and display it
+  hosts: master
+  vars:
+    abc_content: "{{ lookup('file', '/tmp/abc.txt') }}"
+  tasks:
+  - debug:
+      msg: "Content of /tmp/abc.txt is {{ abc_content }}"

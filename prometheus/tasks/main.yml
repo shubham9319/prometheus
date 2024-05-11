@@ -1,0 +1,119 @@
+- name: Create a new user without a home directory
+  user:
+    name: "{{ prometheus_username }}"
+    create_home: false
+    shell: /bin/false
+    state: present
+
+- name: Create /etc/prometheus directory
+  file:
+    path: /etc/prometheus
+    owner: "{{ prometheus_username }}"
+    group: "{{ prometheus_username }}"
+    state: directory
+
+- name: Create /var/lib/prometheus directory
+  file:
+    path: /var/lib/prometheus
+    owner: "{{ prometheus_username }}"
+    group: "{{ prometheus_username }}"
+    state: directory
+
+- name: Download Prometheus release archive to /tmp
+  get_url:
+    url: "https://github.com/prometheus/prometheus/releases/download/v{{ prometheus_version }}/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz"
+    dest: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz"
+    mode: '0644'
+
+- name: Extract Prometheus release archive
+  ansible.builtin.unarchive:
+    src: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz"
+    dest: "/tmp"
+    remote_src: yes
+
+- name: Clean up the archive
+  file:
+    path: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz"
+    state: absent
+
+- name: Copy Prometheus binary to /usr/local/bin
+  copy:
+    src: /tmp/prometheus-{{ prometheus_version }}.linux-amd64/prometheus
+    dest: /usr/local/bin/prometheus
+    owner: "{{ prometheus_username }}"
+    group: "{{ prometheus_username }}"
+    mode: 0755
+    remote_src: true
+  become: true
+
+- name: Copy promtool binary to /usr/local/bin
+  copy:
+    src: /tmp/prometheus-{{ prometheus_version }}.linux-amd64/promtool
+    dest: /usr/local/bin/promtool
+    owner: "{{ prometheus_username }}"
+    group: "{{ prometheus_username }}"
+    mode: 0755
+    remote_src: true
+  become: true
+
+- name: Copy Prometheus consoles to /etc/prometheus
+  copy:
+    src: /tmp/prometheus-{{ prometheus_version }}.linux-amd64/consoles
+    dest: /etc/prometheus
+    owner: "{{ prometheus_username }}"
+    group: "{{ prometheus_username }}"
+    mode: 0755
+    remote_src: true
+  become: true
+
+- name: Copy promtool console_libraries to /usr/local/bin
+  copy:
+    src: /tmp/prometheus-{{ prometheus_version }}.linux-amd64/console_libraries
+    dest: /etc/prometheus
+    owner: "{{ prometheus_username }}"
+    group: "{{ prometheus_username }}"
+    mode: 0755
+    remote_src: true
+  become: true
+
+- name: Delete /tmp/prometheus directory
+  file:
+    path: /tmp/prometheus-{{ prometheus_version }}.linux-amd64
+    state: absent
+
+- name: Replace the content of /etc/prometheus/prometheus.yml
+  template:
+    src: prometheus_config.j2
+    dest: /etc/prometheus/prometheus.yml
+    owner: "{{ prometheus_username }}"
+    group: "{{ prometheus_username }}"
+    mode: 0644
+  become: true
+
+- name: Replace the content of /etc/systemd/system/prometheus.service
+  template:
+    src: prometheus_service.j2
+    dest: /etc/systemd/system/prometheus.service
+    owner: root
+    group: root
+    mode: 0644
+  become: true
+  notify: Reload systemd
+
+- name: Reload systemd to apply changes
+  systemd:
+    name: "{{ prometheus_username }}"
+    state: reloaded
+  become: true
+
+- name: Enable the prometheus service
+  systemd:
+    name: "{{ prometheus_username }}"
+    enabled: yes
+  become: true
+
+- name: "UFW - Allow 9090 port"
+  ufw:
+    rule: allow
+    port: 9090
+    proto: tcp

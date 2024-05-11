@@ -1,0 +1,4 @@
+  - job_name: 'node_exporter'
+    scrape_interval: 5s
+    static_configs:
+      - targets: [ {% for host in groups['worker'] %} '{{ hostvars[host]['ansible_host'] }}:9100'{% if not loop.last %}, {% endif %} {% endfor %}]
