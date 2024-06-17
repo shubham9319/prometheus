@@ -1,38 +1,226 @@
-Role Name
-=========
+# Prometheus Ansible Role
 
-A brief description of the role goes here.
+This Ansible role installs and configures the prometheus for monitoring.
 
-Requirements
-------------
+## File Structure
+```
+prometheus/
+├── handlers/
+│   └── main.yml
+├── tasks/
+│   └── main.yml
+├── templates/
+│   ├── prometheus_config.j2
+│   └── prometheus_service.j2
+└── vars/
+    └── main.yml
+```
 
-Any pre-requisites that may not be covered by Ansible itself or the role should be mentioned here. For instance, if the role uses the EC2 module, it may be a good idea to mention in this section that the boto package is required.
+### Files and Their Purposes
 
-Role Variables
---------------
+1. handlers/main.yml
 
-A description of the settable variables for this role should go here, including any variables that are in defaults/main.yml, vars/main.yml, and any variables that can/should be set via parameters to the role. Any variables that are read from other roles and/or the global scope (ie. hostvars, group vars, etc.) should be mentioned here as well.
+This handler reloads systemd to apply changes after configuring Prometheus.
 
-Dependencies
-------------
+```yaml
+- name: Reload systemd
+  systemd:
+    name: prometheus
+    state: restarted
+```
 
-A list of other roles hosted on Galaxy should go here, plus any details in regards to parameters that may need to be set for other roles, or variables that are used from other roles.
+2. tasks/main.yml
 
-Example Playbook
-----------------
+This file contains tasks for setting up Prometheus:
 
-Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
+```yaml
+- name: Create a new user without a home directory
+  user:
+    name: "{{ username }}"
+    create_home: false
+    shell: /bin/false
+    state: present
 
-    - hosts: servers
-      roles:
-         - { role: username.rolename, x: 42 }
+- name: Create /etc/prometheus directory
+  file:
+    path: /etc/prometheus
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    state: directory
 
-License
--------
+- name: Create /var/lib/prometheus directory
+  file:
+    path: /var/lib/prometheus
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    state: directory
 
-BSD
+- name: Download Prometheus release archive to /tmp
+  get_url:
+    url: "https://github.com/prometheus/prometheus/releases/download/v{{ prometheus_version }}/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz"
+    dest: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz"
+    mode: '0644'
 
-Author Information
-------------------
+- name: Extract Prometheus release archive
+  ansible.builtin.unarchive:
+    src: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz"
+    dest: "/tmp"
+    remote_src: yes
 
-An optional section for the role authors to include contact information, or a website (HTML is not allowed).
+- name: Clean up the archive
+  file:
+    path: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz"
+    state: absent
+
+- name: Copy Prometheus binary to /usr/local/bin
+  copy:
+    src: /tmp/prometheus-{{ prometheus_version }}.linux-amd64/prometheus
+    dest: /usr/local/bin/prometheus
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: 0755
+    remote_src: true
+  become: true
+
+- name: Copy promtool binary to /usr/local/bin
+  copy:
+    src: /tmp/prometheus-{{ prometheus_version }}.linux-amd64/promtool
+    dest: /usr/local/bin/promtool
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: 0755
+    remote_src: true
+  become: true
+
+- name: Copy Prometheus consoles to /etc/prometheus
+  copy:
+    src: /tmp/prometheus-{{ prometheus_version }}.linux-amd64/consoles
+    dest: /etc/prometheus
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: 0755
+    remote_src: true
+  become: true
+
+- name: Copy promtool console_libraries to /usr/local/bin
+  copy:
+    src: /tmp/prometheus-{{ prometheus_version }}.linux-amd64/console_libraries
+    dest: /etc/prometheus
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: 0755
+    remote_src: true
+  become: true
+
+- name: Delete /tmp/prometheus directory
+  file:
+    path: /tmp/prometheus-{{ prometheus_version }}.linux-amd64
+    state: absent
+
+- name: Replace the content of /etc/prometheus/prometheus.yml
+  template:
+    src: prometheus_config.j2
+    dest: /etc/prometheus/prometheus.yml
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: 0644
+  become: true
+
+- name: Replace the content of /etc/systemd/system/prometheus.service
+  template:
+    src: prometheus_service.j2
+    dest: /etc/systemd/system/prometheus.service
+    owner: root
+    group: root
+    mode: 0644
+  become: true
+  notify: Reload systemd
+
+- name: Reload systemd to apply changes
+  systemd:
+    name: prometheus
+    state: restarted
+  become: true
+
+- name: Enable the prometheus service
+  systemd:
+    name: "{{ username }}"
+    enabled: yes
+  become: true
+
+- name: "UFW - Allow 9090 port"
+  ufw:
+    rule: allow
+    port: 9090
+    proto: tcp
+```
+
+- Create a new user: Creates a user without a home directory.
+- Create directories: Sets up directories /etc/prometheus and /var/lib/prometheus.
+- Download and extract Prometheus: Fetches the Prometheus release archive, extracts it, and cleans up.
+- Copy binaries and resources: Installs Prometheus binaries (prometheus and promtool) and copies consoles and libraries.
+- Configure Prometheus: Generates configuration file (prometheus.yml) and systemd service unit file (prometheus.service).
+- Manage systemd service: Ensures Prometheus service is restarted and enabled.
+- Manage firewall: Allows port 9090 through UFW.
+
+3.a. templates/prometheus_config.j2
+
+Template for Prometheus configuration (prometheus.yml), specifying scrape targets and intervals.
+
+```yaml
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['localhost:9090']
+```
+
+3.b. templates/prometheus_service.j2
+
+Template for Prometheus systemd service (prometheus.service), defining startup parameters and paths.
+
+```yaml
+[Unit]
+Description=Prometheus Monitoring
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=prometheus
+Group=prometheus
+Type=simple
+ExecStart=/usr/local/bin/prometheus \
+    --config.file=/etc/prometheus/prometheus.yml \
+    --storage.tsdb.path=/var/lib/prometheus/ \
+    --web.console.templates=/etc/prometheus/consoles \
+    --web.console.libraries=/etc/prometheus/console_libraries
+
+[Install]
+WantedBy=multi-user.target
+```
+
+4. vars/main.yml
+
+Variables used in the role (username and prometheus_version).
+
+```yaml
+# vars file for prometheus
+username: "prometheus"
+prometheus_version: "2.47.1"
+```
+
+### Usage
+- Clone this repository into your Ansible roles directory.
+
+- Customize vars/main.yml if necessary.
+
+- Include prometheus in your playbook.
+
+- Run your playbook to deploy and configure Prometheus:
+
+```yaml
+ansible-playbook -i inventory playbook.yml
+```
