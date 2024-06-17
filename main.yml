@@ -1,4 +1,4 @@
-- name: Install and configure Prometheus
+- name: Install and configure Prometheus & Grafana
   hosts: master1
   become: true
   vars_files:
