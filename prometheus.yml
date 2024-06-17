@@ -2,5 +2,7 @@
 - name: Install and configure Prometheus
   hosts: master
   become: true
+  vars_files:
+  - vars/sudo_password.yml
   roles:
-  - prometheus
+  - prometheus ## Used prometheus role here.

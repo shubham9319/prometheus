@@ -1,12 +1,16 @@
----
 - name: Install and configure Prometheus
-  hosts: master
+  hosts: master1
   become: true
+  vars_files:
+  - vars/sudo_password.yml
   roles:
   - prometheus
+  - grafana
 
 - name: Install and configure node-exporter
-  hosts: worker
+  hosts: worker1
   become: true
+  vars_files:
+  - vars/sudo_password.yml
   roles:
   - node-exporter

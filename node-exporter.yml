@@ -2,5 +2,7 @@
 - name: Install node-exporter
   hosts: worker
   become: true
+  vars_files:
+  - vars/sudo_password.yml
   roles:
   - node-exporter

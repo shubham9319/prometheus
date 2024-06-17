@@ -40,19 +40,19 @@
   template:
     src: node_exporter_config.j2 # Provide the path to your Jinja2 template
     dest: /tmp/node_exporter_config.yml # Temporary file to store the rendered configuration
-  delegate_to: master
+  delegate_to: master1
 
 - name: Read Rendered Configuration File Content
   command: cat /tmp/node_exporter_config.yml
   register: rendered_config
-  delegate_to: master
+  delegate_to: master1
 
 - name: Append Rendered Configuration to Prometheus Configuration
   blockinfile:
     path: /etc/prometheus/prometheus.yml
     insertafter: EOF
     content: "{{ rendered_config.stdout }}"
-  delegate_to: master
+  delegate_to: master1
 
 - name: Replace the content of /etc/systemd/system/node_exporter.service
   template:
@@ -83,9 +83,9 @@
   systemd:
     name: prometheus
     state: restarted
-  delegate_to: master
+  delegate_to: master1
 
 - name: Reload systemd daemon
   systemd:
     daemon_reload: yes
-  delegate_to: master
+  delegate_to: master1

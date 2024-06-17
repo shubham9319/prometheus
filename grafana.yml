@@ -1,6 +1,7 @@
----
 - name: Install grafana
-  hosts: master
+  hosts: master1
   become: true
+  vars_files:
+  - vars/sudo_password.yml
   roles:
   - grafana

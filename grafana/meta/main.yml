@@ -1,7 +1,7 @@
 galaxy_info:
-  author: shubham shinde
-  description: This role is used to setup grafana on linux system like ubuntu
-  company: Personal
+  author: Shubham Shinde
+  description: This is a grafana role.
+  company: Personal!
 
   # If the issue tracker for your role is not on github, uncomment the
   # next line and provide a value

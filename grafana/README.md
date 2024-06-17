@@ -1,36 +1,39 @@
-## Project Title:
-Grafana Deployment Automation
+Role Name
+=========
 
-## Description:
-This project automates the deployment of Grafana, an open-source platform for monitoring and observability, using Ansible. It adds Grafana's GPG key to the keyring, adds the Grafana repository to the sources.list, installs Grafana, enables the Grafana service, allows firewall traffic on port 3000, and restarts the Grafana service.
+A brief description of the role goes here.
+Username & Password for grana is admin.
 
-### File Tree Structure:
-    grafana-automation/
-    │
-    ├── README.md
-    ├── tasks
-    │ └── main.yml
-    ├── handlers
-    │ └── main.yml
-    └── vars
-    └── main.yml
+Requirements
+------------
 
-### Explanation:
-1. `README.md:` Provides an overview of the project, its purpose, and instructions on using it.
-2. `tasks/main.yml:` Contains Ansible tasks for deploying Grafana, including adding a GPG key, adding a repository, updating the APT cache, installing Grafana, enabling service, allowing firewall traffic, and restarting the service.
-3. `handlers/main.yml:` Contains a handler to restart the Grafana service after changes are made.
-4. `vars/main.yml:` Defines variables used in the deployment process, such as Grafana GPG key and repository URL.
+Any pre-requisites that may not be covered by Ansible itself or the role should be mentioned here. For instance, if the role uses the EC2 module, it may be a good idea to mention in this section that the boto package is required.
 
-## Usage
+Role Variables
+--------------
 
-1. **Clone Repository**: Clone this repository to your local machine.
+A description of the settable variables for this role should go here, including any variables that are in defaults/main.yml, vars/main.yml, and any variables that can/should be set via parameters to the role. Any variables that are read from other roles and/or the global scope (ie. hostvars, group vars, etc.) should be mentioned here as well.
 
-2. **Update Variables**: Navigate to `/grafana/vars/main.yml` and update the variables as per your requirements.
+Dependencies
+------------
 
-3. **Execute Playbook**: Run the following command to execute the playbook:
-    ```
-    ansible-playbook -i inventory-file grafana.yml
-    ```
+A list of other roles hosted on Galaxy should go here, plus any details in regards to parameters that may need to be set for other roles, or variables that are used from other roles.
 
-## Note:
-After cloning this repository, execute the playbook using the `ansible-playbook` command as shown above.
+Example Playbook
+----------------
+
+Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
+
+    - hosts: servers
+      roles:
+         - { role: username.rolename, x: 42 }
+
+License
+-------
+
+BSD
+
+Author Information
+------------------
+
+An optional section for the role authors to include contact information, or a website (HTML is not allowed).
