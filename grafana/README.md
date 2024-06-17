@@ -13,7 +13,7 @@ grafana/
 Code Summary
 1. handlers/main.yml: This file defines actions that are triggered by notifications from other tasks.
 
-```
+```yaml
 - name: Start Grafana Service
   systemd:
     name: grafana-server
@@ -24,7 +24,7 @@ Code Summary
 
 2. tasks/main.yml: This file contains the main tasks that will be executed to set up Grafana.
 
-```
+```yaml
 # tasks file for grafana
 - name: Add Grafana GPG key to keyring
   shell: "{{ grafana_gpg_key }}"
@@ -67,7 +67,7 @@ Code Summary
 
 3. vars/main.yml:
 This file defines variables used in the playbook.
-```
+```yaml
 # vars file for grafana
 grafana_gpg_key: "wget -q -O - https://apt.grafana.com/gpg.key | gpg --dearmor | sudo tee /etc/apt/keyrings/grafana.gpg > /dev/null"
 grafana_repo: 'echo "deb [signed-by=/etc/apt/keyrings/grafana.gpg] https://apt.grafana.com stable main" | sudo tee -a /etc/apt/sources.list.d/grafana.list'
