@@ -1,5 +1,8 @@
-File Tree Structure
-===================
+# Grafana Ansible Role
+
+This Ansible role installs and configures the grafana for virtualization.
+
+## File Structure
 ```
 grafana/
 ├── handlers/
